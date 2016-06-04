@@ -100,7 +100,7 @@ void UserAppInitialize(void)
   LedPWM(LCD_GREEN,LED_PWM_100); 
   
   /*requirement 3 initialize*/
-    u8position=LINE2_START_ADDR;
+   u8position=LINE2_START_ADDR;
   for(u8 i = 0; i < USER_INPUT_BUFFER_SIZE; i++)
   {
     au8UserInputBuffer[i] = 0;
@@ -159,25 +159,36 @@ static void UserAppSM_Idle(void)
   static u8 u8Message[]="\n\rCharacter count cleared!";
   static u8 u8CharCount=0;
   static u8 u8TimeCounter=0;
+  static u8 u8NumCharCount=0;//count the number of characters that we have typed in
+  static u8 u8ClearCount=0;
 
-  u8TimeCounter++;
-  if(u8TimeCounter == 10)
+    u8TimeCounter++;
+  if(u8TimeCounter == 10)/*To sacnf the characters immediately*/
   { 
     u8TimeCounter = 0;
     u8CharCount = DebugScanf(au8UserInputBuffer);
     au8UserInputBuffer[u8CharCount] = '\0';  
     LCDMessage(u8position,au8UserInputBuffer);
+    if(u8CharCount!=0)
+    {
+      u8position++;
+      u8NumCharCount++;
+      u8ClearCount++;
+    }
    }
   
-  
-  /*if((G_u8DebugScanfCharCount%20)==0)/*if the screen is full ,clear the line2
+  if(u8ClearCount==21)/*if the screen is full ,clear the line2*/
   {
-    LCDClearChars(LINE2_START_ADDR,20);   
-  }*/
-  if(WasButtonPressed(BUTTON0))
+    u8ClearCount=0;
+    LCDClearChars(LINE2_START_ADDR,20); 
+    u8position=LINE2_START_ADDR;   
+  }
+  if(WasButtonPressed(BUTTON0))//press button0 to clear line2
   {
     ButtonAcknowledge(BUTTON0);   
     LCDClearChars(LINE2_START_ADDR,20);
+    u8position=LINE2_START_ADDR;
+    u8ClearCount=0;
   }
   /* Print message with number of characters in scanf buffer */
   if(WasButtonPressed(BUTTON1))
@@ -185,14 +196,14 @@ static void UserAppSM_Idle(void)
     ButtonAcknowledge(BUTTON1);
     
     DebugPrintf(u8NumCharsMessage);
-    DebugPrintNumber(G_u8DebugScanfCharCount);
+    DebugPrintNumber(u8NumCharCount);
     DebugLineFeed();
   }
-  if(WasButtonPressed(BUTTON2))
+  if(WasButtonPressed(BUTTON2))//reset the numbercount 
   {
     ButtonAcknowledge(BUTTON2);
     
-    G_u8DebugScanfCharCount=0;
+    u8NumCharCount=0;
     DebugPrintf(u8Message);
     DebugLineFeed();
   }
