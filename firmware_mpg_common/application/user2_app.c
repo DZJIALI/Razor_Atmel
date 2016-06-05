@@ -1,14 +1,14 @@
 /**********************************************************************************************************************
-File: user_app.c                                                                
+File: user2_app.c                                                                
 
 ----------------------------------------------------------------------------------------------------------------------
-To start a new task using this user_app as a template:
- 1. Copy both user_app.c and user_app.h to the Application directory
+To start a new task using this user2_app as a template:
+ 1. Copy both user2_app.c and user2_app.h to the Application directory
  2. Rename the files yournewtaskname.c and yournewtaskname.h
  3. Add yournewtaskname.c and yournewtaskname.h to the Application Include and Source groups in the IAR project
- 4. Use ctrl-h (make sure "Match Case" is checked) to find and replace all instances of "user_app" with "yournewtaskname"
- 5. Use ctrl-h to find and replace all instances of "UserApp" with "YourNewTaskName"
- 6. Use ctrl-h to find and replace all instances of "USER_APP" with "YOUR_NEW_TASK_NAME"
+ 4. Use ctrl-h (make sure "Match Case" is checked) to find and replace all instances of "user2_app" with "yournewtaskname"
+ 5. Use ctrl-h to find and replace all instances of "User2App" with "YourNewTaskName"
+ 6. Use ctrl-h to find and replace all instances of "USER2_APP" with "YOUR_NEW_TASK_NAME"
  7. Add a call to YourNewTaskNameInitialize() in the init section of main
  8. Add a call to YourNewTaskNameRunActiveState() in the Super Loop section of main
  9. Update yournewtaskname.h per the instructions at the top of yournewtaskname.h
@@ -16,7 +16,7 @@ To start a new task using this user_app as a template:
 ----------------------------------------------------------------------------------------------------------------------
 
 Description:
-This is a user_app.c file template 
+This is a user2_app.c file template 
 
 ------------------------------------------------------------------------------------------------------------------------
 API:
@@ -25,10 +25,10 @@ Public functions:
 
 
 Protected System functions:
-void UserAppInitialize(void)
+void User2AppInitialize(void)
 Runs required initialzation for the task.  Should only be called once in main init section.
 
-void UserAppRunActiveState(void)
+void User2AppRunActiveState(void)
 Runs current task state.  Should only be called once in main loop.
 
 
@@ -41,7 +41,7 @@ Global variable definitions with scope across entire project.
 All Global variable names shall start with "G_"
 ***********************************************************************************************************************/
 /* New variables */
-volatile u32 G_u32UserAppFlags;                       /* Global state flags */
+                    /* Global state flags */
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -52,17 +52,15 @@ extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
 
-extern u8 G_au8DebugScanfBuffer[];                     /* From debug.c */
-extern u8 G_u8DebugScanfCharCount;                     /* From debug.c  */
+extern volatile u32 G_u32UserAppFlags;       
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
-Variable names shall start with "UserApp_" and be declared as static.
+Variable names shall start with "User2App_" and be declared as static.
 ***********************************************************************************************************************/
-static fnCode_type UserApp_StateMachine;            /* The state machine function pointer */
-static u32 UserApp_u32Timeout;                      /* Timeout counter used across states */
+static fnCode_type User2App_StateMachine;            /* The state machine function pointer */
+static u32 User2App_u32Timeout;                      /* Timeout counter used across states */
 
-static u8 au8UserInputBuffer[USER_INPUT_BUFFER_SIZE];  /* Char buffer */
-static u8 u8position;
+
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -77,7 +75,7 @@ Function Definitions
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------------------------------------------------
-Function: UserAppInitialize
+Function: User2AppInitialize
 
 Description:
 Initializes the State Machine and its variables.
@@ -88,41 +86,33 @@ Requires:
 Promises:
   - 
 */
-void UserAppInitialize(void)
+void User2AppInitialize(void)
 {
-  /*   requirement 1*/
-  u8 u8MyName[]="A3.JIALI";
-  LCDMessage(LINE1_START_ADDR,u8MyName);
-  LCDClearChars(LINE1_START_ADDR+8,12);
-  /*requirement 2*/
-  LedPWM(LCD_BLUE,LED_PWM_100);
-  LedPWM(LCD_RED,LED_PWM_0);
-  LedPWM(LCD_GREEN,LED_PWM_100); 
-  
-  /*requirement 3 initialize*/
-   u8position=LINE2_START_ADDR;
-  for(u8 i = 0; i < USER_INPUT_BUFFER_SIZE; i++)
-  {
-    au8UserInputBuffer[i] = 0;
-  }
-  
-  
+  LedOff(RED);
+  LedOff(ORANGE);
+  LedOff(YELLOW);
+  LedOff(GREEN);
+  LedOff(CYAN);
+  LedOff(BLUE);
+  LedOff(PURPLE);
+  LedOff(WHITE);  
+  PWMAudioSetFrequency(BUZZER1, 500);
   /* If good initialization, set state to Idle */
   if( 1 )
   {
-    UserApp_StateMachine = UserAppSM_Idle;
+    User2App_StateMachine = User2AppSM_Idle;
   }
   else
   {
     /* The task isn't properly initialized, so shut it down and don't run */
-    UserApp_StateMachine = UserAppSM_FailedInit;
+    User2App_StateMachine = User2AppSM_FailedInit;
   }
 
-} /* end UserAppInitialize() */
+} /* end User2AppInitialize() */
 
 
 /*----------------------------------------------------------------------------------------------------------------------
-Function UserAppRunActiveState()
+Function User2AppRunActiveState()
 
 Description:
 Selects and runs one iteration of the current state in the state machine.
@@ -135,11 +125,11 @@ Requires:
 Promises:
   - Calls the function to pointed by the state machine function pointer
 */
-void UserAppRunActiveState(void)
+void User2AppRunActiveState(void)
 {
-  UserApp_StateMachine();
+  User2App_StateMachine();
 
-} /* end UserAppRunActiveState */
+} /* end User2AppRunActiveState */
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -153,120 +143,157 @@ State Machine Function Definitions
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for a message to be queued */
-static void UserAppSM_Idle(void)
+static void User2AppSM_Idle(void)
 {
-  static u8 u8NumCharsMessage[] = "\n\rTotal characters received: ";
-  static u8 u8ClearMessage[]="\n\rCharacter count cleared!";
-  static u8 u8CharCount=0;
-  static u8 u8TimeCounter=0;
-  static u8 u8NumCharCount=0;//count the number of characters that we have typed in
-  static u8 u8ClearCount=0;
-
+  static u8 u8counter=0x01;//Led
+  static u16 u16count=60;
+  static u8 u8flag=0;
   
-  static char J,I,A,L;
-  static u8 MyName[5]="JIALI";
-  static u8 NameBuffer[6]={0};
-  static u8 u8Namei=0;
-  static u8 u8NameCount=0;
-  static u8 u8CurrentMessage[]="\n\rThe current letter is:";
-  static u8 u8CurrentCountMessage[]="\n\rThe current namecount is:";
-
-
+  static u16 u16Counter=0;//Buzzer
+  static u8 u8i=0;
+  static u16 u16frequency[]={330,294,262,294,330,330,330,294,294,294,330,392,392,330,294,262,294,330,330,330,330,294,294,330,294,262};
   
-    u8TimeCounter++;
-  if(u8TimeCounter == 10)/*To sacnf the characters immediately*/
-  { 
-    u8TimeCounter = 0;
-    u8CharCount = DebugScanf(au8UserInputBuffer);
-    au8UserInputBuffer[u8CharCount] = '\0';  
-    LCDMessage(u8position,au8UserInputBuffer);
-    if(u8CharCount!=0)
+  static u16 u16timecounter=0;
+      
+  if(G_u32UserAppFlags==1)
+  {
+      u16timecounter++; 
+    
+    u16Counter++;//Buzzer
+    PWMAudioSetFrequency(BUZZER1,u16frequency[u8i]);
+    PWMAudioOn(BUZZER1);
+    if(u16Counter==500)
     {
-      u8position++;
-      u8NumCharCount++;
-      u8ClearCount++;
+        u8i++;
+        if(u8i==26)
+        {
+          u8i=0;
+        }       
+        u16Counter=0;
+    }
+    //LED
+      u16count--;
+  if(u16count==0)
+  {
+    u16count=60;
+    if(u8counter&0x01)
+    {
+      LedOn(RED);
+    }
+    else
+    {
+      LedOff(RED);
+    }
+    if(u8counter&0x02)
+    {
+      LedOn(ORANGE);
+    }
+    else
+    {
+      LedOff(ORANGE);
+    }
+    if(u8counter&0x04)
+    {
+      LedOn(YELLOW);
+    }
+    else
+    {
+      LedOff(YELLOW);
+    }
+    if(u8counter&0x08)
+    {
+      LedOn(GREEN);
+    }
+    else
+    {
+      LedOff(GREEN);
+    }
+    if(u8counter&0x10)
+    {
+      LedOn(CYAN);
+    }
+    else
+    {
+      LedOff(CYAN);
+    }
+    if(u8counter&0x20)
+    {
+      LedOn(BLUE);
+    }
+    else
+    {
+      LedOff(BLUE);
+    }
+    if(u8counter&0x40)
+    {
+      LedOn(PURPLE);
+    }
+    else
+    {
+      LedOff(PURPLE);
+    }
+    if(u8counter&0x80)
+    {
+      LedOn(WHITE);
+    }
+    else
+    {
+      LedOff(WHITE);
+    }
+    if(u8counter==0&&u8flag==0)
+    {
+      u8counter=0x80;
+      u8flag=1;
+    }
+    if(u8counter==0&&u8flag==1)
+    {
+      u8counter=0x01;
+      u8flag=0;
+    }
+      if(u8flag==0)
+    {
+      u8counter<<=1;
+    }
+    if(u8flag==1)
+    {
+      u8counter>>=1;
+    }
+  }  
+     if(u16timecounter==5000)
+    {
+      u16timecounter=0;
+      G_u32UserAppFlags=0;
+      u8counter=0x01;
+      LedOff(RED);
+      LedOff(ORANGE);
+      LedOff(YELLOW);
+      LedOff(GREEN);
+      LedOff(CYAN);
+      LedOff(BLUE);
+      LedOff(PURPLE);
+      LedOff(WHITE);  
+      PWMAudioOff(BUZZER1);
+      
     }
    }
-  
-  if(u8ClearCount==21)/*if the screen is full ,clear the line2*/
-  {
-    u8ClearCount=0;
-    LCDClearChars(LINE2_START_ADDR,20); 
-    u8position=LINE2_START_ADDR;   
-  }
-  if(WasButtonPressed(BUTTON0))//press button0 to clear line2
-  {
-    ButtonAcknowledge(BUTTON0);   
-    LCDClearChars(LINE2_START_ADDR,20);
-    u8position=LINE2_START_ADDR;
-    u8ClearCount=0;
-  }
-  /* Print message with number of characters in scanf buffer */
-  if(WasButtonPressed(BUTTON1))
-  {
-    ButtonAcknowledge(BUTTON1);
-    
-    DebugPrintf(u8NumCharsMessage);
-    DebugPrintNumber(u8NumCharCount);
-    DebugLineFeed();
-  }
-  if(WasButtonPressed(BUTTON2))//reset the numbercount 
-  {
-    ButtonAcknowledge(BUTTON2);
-    
-    u8NumCharCount=0;
-    DebugPrintf(u8ClearMessage);
-    DebugLineFeed();
-  }
-  
-   //requirement 9 and 10
-  if(MyName[u8Namei]==au8UserInputBuffer[0])
-  {
-    NameBuffer[u8Namei]=au8UserInputBuffer[0];
-    NameBuffer[u8Namei+1]='\0';
-    u8Namei++;
-    
-    if(u8Namei==5)
-   {
-     u8Namei=0;
-     u8NameCount++;
-    DebugPrintf(u8CurrentMessage);
-    DebugPrintf(NameBuffer);
-    DebugPrintf(u8CurrentCountMessage);
-    DebugPrintNumber(u8NameCount);
-    DebugLineFeed();      
-     G_u32UserAppFlags=1;//the flag in user2.c
-
-   }
-  }
-  
-  if(WasButtonPressed(BUTTON3))
-  {
-    ButtonAcknowledge(BUTTON3);
-    DebugPrintf(u8CurrentMessage);
-    DebugPrintf(NameBuffer);
-    DebugPrintf(u8CurrentCountMessage);
-    DebugPrintNumber(u8NameCount);
-    DebugLineFeed();    
-  }
-    
-} /* end UserAppSM_Idle() */
+}  
+ /* end User2AppSM_Idle() */
      
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
-static void UserAppSM_Error(void)          
+static void User2AppSM_Error(void)          
 {
   
-} /* end UserAppSM_Error() */
+} /* end User2AppSM_Error() */
 
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* State to sit in if init failed */
-static void UserAppSM_FailedInit(void)          
+static void User2AppSM_FailedInit(void)          
 {
     
-} /* end UserAppSM_FailedInit() */
+} /* end User2AppSM_FailedInit() */
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
