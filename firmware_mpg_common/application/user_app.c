@@ -156,12 +156,22 @@ State Machine Function Definitions
 static void UserAppSM_Idle(void)
 {
   static u8 u8NumCharsMessage[] = "\n\rTotal characters received: ";
-  static u8 u8Message[]="\n\rCharacter count cleared!";
+  static u8 u8ClearMessage[]="\n\rCharacter count cleared!";
   static u8 u8CharCount=0;
   static u8 u8TimeCounter=0;
   static u8 u8NumCharCount=0;//count the number of characters that we have typed in
   static u8 u8ClearCount=0;
 
+  
+  static char J,I,A,L;
+  static u8 MyName[5]="JIALI";
+  static u8 NameBuffer[6]={0};
+  static u8 u8Namei=0;
+  static u8 u8NameCount=0;
+  static u8 u8CurrentMessage[]="\n\rThe current letter is:";
+  static u8 u8CurrentCountMessage[]="\n\rThe current namecount is:";
+
+  
     u8TimeCounter++;
   if(u8TimeCounter == 10)/*To sacnf the characters immediately*/
   { 
@@ -204,8 +214,32 @@ static void UserAppSM_Idle(void)
     ButtonAcknowledge(BUTTON2);
     
     u8NumCharCount=0;
-    DebugPrintf(u8Message);
+    DebugPrintf(u8ClearMessage);
     DebugLineFeed();
+  }
+  
+   //requirement 9 and 10
+  if(MyName[u8Namei]==au8UserInputBuffer[0])
+  {
+    NameBuffer[u8Namei]=au8UserInputBuffer[0];
+    NameBuffer[u8Namei+1]='\0';
+    u8Namei++;
+    
+    if(u8Namei==5)
+   {
+     u8Namei=0;
+     u8NameCount++;
+   }
+  }
+  
+  if(WasButtonPressed(BUTTON3))
+  {
+    ButtonAcknowledge(BUTTON3);
+    DebugPrintf(u8CurrentMessage);
+    DebugPrintf(NameBuffer);
+    DebugPrintf(u8CurrentCountMessage);
+    DebugPrintNumber(u8NameCount);
+    DebugLineFeed();    
   }
     
 } /* end UserAppSM_Idle() */
