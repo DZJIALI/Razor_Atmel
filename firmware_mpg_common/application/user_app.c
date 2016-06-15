@@ -43,7 +43,7 @@ All Global variable names shall start with "G_"
 /* New variables */
 volatile u32 G_u32UserAppFlags;                       /* Global state flags */
 
-
+static void  led_display_button(u8 * u8lastdata,u8 *u8new_data);
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Existing variables (defined in other files -- should all contain the "extern" keyword) */
 extern volatile u32 G_u32SystemFlags;                  /* From main.c */
@@ -170,111 +170,123 @@ static void UserAppSM_Idle(void)
   static u8 u8flag=0;
   static u32 u32TimeCounter=0;
   static bool judge=FALSE;
-  
-  static u8 au8CompareMsg[10]={0};
+  static u8 buttoni=0;
+  static u8 j;
+  static u8 i;
+  static u8 k;
+  static u8 m;
+  static u8 u8DataCounter=0;
+  static u8 kcounter;
+  static u8 au8LastAntData[8]={0};
+  static u8 au8CompareMsg[8]={0};
+  static u8 Newdata=0;
   if(u8flag==0)//receive data and compare
   {
     if(WasButtonPressed(BUTTON0))
     {      
-      ButtonAcknowledge(BUTTON0);
-      au8CompareMsg[0]=1;
-      judge=TRUE;
+      ButtonAcknowledge(BUTTON0);     
+      au8CompareMsg[buttoni]=1;
+      buttoni++;
     }
     if(WasButtonPressed(BUTTON1))
     {
-      ButtonAcknowledge(BUTTON1);
-      au8CompareMsg[0]=2;
-      judge=TRUE;
+      ButtonAcknowledge(BUTTON1);    
+      au8CompareMsg[buttoni]=2;
+      buttoni++;
     }
      if(WasButtonPressed(BUTTON2))
     {
-      ButtonAcknowledge(BUTTON2);
-      au8CompareMsg[0]=3;
-      judge=TRUE;
+      ButtonAcknowledge(BUTTON2);   
+      au8CompareMsg[buttoni]=3;
+      buttoni++;
     }
     if(WasButtonPressed(BUTTON3))
     {
-      ButtonAcknowledge(BUTTON3);
-      au8CompareMsg[0]=4;
-      judge=TRUE;
+      ButtonAcknowledge(BUTTON3);   
+      au8CompareMsg[buttoni]=4;
+      buttoni++;
     }
-  }
-  else if(u8flag==1)//send data
+  if(u8DataCounter!=0)
   {
     
+    if(buttoni==u8DataCounter)
+    {
+          buttoni=0; 
+          for(k=0;k<u8DataCounter;k++)
+          {
+            if(au8CompareMsg[k]==au8LastAntData[k])
+            {
+               kcounter++;
+            }
+          }
+          if(kcounter==u8DataCounter) 
+          {
+            judge=TRUE;
+          }
+        if(judge)
+        {  
+           u8flag=1;
+           LCDCommand(LCD_CLEAR_CMD);
+           LCDMessage(LINE1_START_ADDR+2,au8RightMsg); 
+     
+        }   
+         else if(judge==FALSE)
+        {
+          LCDCommand(LCD_CLEAR_CMD);
+          LCDMessage(LINE1_START_ADDR+4,au8FailMsg); 
+          AntCloseChannel();          
+        }        
+     } 
+    u8DataCounter=0;
+   }//end if u8DataCounter
+  }//end if u8flag 
+  
+  else if(u8flag==1)//send data
+  { 
+    u32TimeCounter++;
+    if(u32TimeCounter>2000)
+    {           
+       u32TimeCounter=0;         
+       LCDCommand(LCD_CLEAR_CMD);
+       LCDMessage(LINE1_START_ADDR,au8SendMsg);             
+   } 
   }
 
-    
+  
+  
+  //show LED sequence
+  if(Newdata==1)
+  {    
+     led_display_button(au8LastAntData,&Newdata) ;        
+  }
+  //the counter of the DATA
+  for(u8 m=0;m<8;m++)
+  {
+    if(au8LastAntData[m]!=0)
+    {
+      u8DataCounter++;
+    } 
+  }  
+
+  //READ
   if( AntReadData() )
   {
-      if(G_eAntApiCurrentMessageClass == ANT_DATA)
-      {             
-          if(G_au8AntApiCurrentData[0]==1)
+    if(G_eAntApiCurrentMessageClass == ANT_DATA)
+    { 
+       for(u8 i = 0; i <8; i++)
+      {       
+        if(G_au8AntApiCurrentData[i] != au8LastAntData[i])
         {
-          LedOn(WHITE);
-          LedOff(BLUE);
-          LedOff(YELLOW);
-          LedOff(RED);       
+          au8LastAntData[i] = G_au8AntApiCurrentData[i];
+          Newdata=1;
         }
+      }
 
-        if(G_au8AntApiCurrentData[0]==2)
-        {
-          LedOn(BLUE);
-          LedOff(WHITE);
-          LedOff(YELLOW);
-          LedOff(RED);           
-        }
-
-        if(G_au8AntApiCurrentData[0]==3)
-        {
-          LedOn(YELLOW);
-          LedOff(BLUE);
-          LedOff(WHITE);
-          LedOff(RED);          
-        }
-
-        if(G_au8AntApiCurrentData[0]==4)
-        {
-          LedOn(RED);
-          LedOff(BLUE);
-          LedOff(YELLOW);
-          LedOff(WHITE);                   
-        }
-
-      if(judge)
-     {  
-           u32TimeCounter++;      
-        //compare
-        if(G_au8AntApiCurrentData[0]==au8CompareMsg[0])
-        {   
-          u8flag=1;
-          LCDCommand(LCD_CLEAR_CMD);
-          LCDMessage(LINE1_START_ADDR+2,au8RightMsg); 
-        }
-        else
-        {          
-          LCDCommand(LCD_CLEAR_CMD);
-          LCDMessage(LINE1_START_ADDR+2,au8FailMsg);
-          AntCloseChannel();
-        }
-       
-         if(u32TimeCounter==12 )
-        {           
-            u32TimeCounter=0;
-            judge=FALSE;
-            LCDCommand(LCD_CLEAR_CMD);
-            LCDMessage(LINE1_START_ADDR,au8SendMsg);             
-         } 
-       }//end of judge    
-     }
-      else if(G_eAntApiCurrentMessageClass == ANT_TICK)
-     {
-        
-     }     
+    }//end if AND_DATA
+    else if(G_eAntApiCurrentMessageClass == ANT_TICK)
+    {        
+    }     
   } //end if ANTREAD
-              
- 
-
 } /* end UserAppSM_Idle() */
  
 
@@ -282,7 +294,69 @@ static void UserAppSM_Idle(void)
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 
-
+static void  led_display_button(u8 *u8lastdata,u8 *u8new_data)
+{
+  static u32 u32dataCount=0;
+  static u8  datai=0;  
+  if(u32dataCount==0)
+  {   
+    if(u8lastdata[datai]==0)
+    {      
+        if( datai++>7)
+        {          
+          datai=0;
+          *u8new_data=0;
+          LedOff(WHITE);
+          LedOff(BLUE);
+          LedOff(YELLOW);
+          LedOff(RED);           
+        }
+        return;     
+    }
+    if(u8lastdata[datai]==1)
+    {
+        LedOn(WHITE);
+        LedOff(BLUE);
+        LedOff(YELLOW);
+        LedOff(RED);                      
+    }
+    if(u8lastdata[datai]==2)
+    {
+          LedOff(WHITE);
+          LedOn(BLUE);
+          LedOff(YELLOW);
+          LedOff(RED); 
+    }
+    if(u8lastdata[datai]==3)
+    {
+          LedOff(WHITE);
+          LedOff(BLUE);
+          LedOn(YELLOW);
+          LedOff(RED); 
+     }
+     if(u8lastdata[datai]==4)
+     {
+          LedOff(WHITE);
+          LedOff(BLUE);
+          LedOff(YELLOW);
+          LedOn(RED); 
+     }    
+  }//end if u32dataCount==200
+  if(u32dataCount++>200)
+  {   
+    u32dataCount=0;
+    if( datai++>8)
+    {         
+        datai=0;
+        *u8new_data=0;
+        LedOff(WHITE);
+        LedOff(BLUE);
+        LedOff(YELLOW);
+        LedOff(RED);           
+    }  
+  }//end delay
+ 
+}//end led_disply_button
 
 
 

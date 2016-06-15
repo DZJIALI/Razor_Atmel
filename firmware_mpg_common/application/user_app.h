@@ -64,12 +64,9 @@ void UserAppRunActiveState(void);
 State Machine Declarations
 ***********************************************************************************************************************/
 static void UserAppSM_Idle(void);    
-static void UserAppSM_WaitChannelOpen(void);
-static void UserAppSM_ChannelOpen(void);
-static void UserAppSM_WaitChannelClose(void);
 static void UserAppSM_Error(void);         
 static void UserAppSM_FailedInit(void);        
-
+static void  led_display_button(u8 *u8lastdata,u8 *u8new_data);
 
 #endif /* __USER_APP_H */
 
