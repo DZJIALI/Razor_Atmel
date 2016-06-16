@@ -148,7 +148,6 @@ Promises:
 void UserAppRunActiveState(void)
 {
   UserApp_StateMachine();
-
 } 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
@@ -167,6 +166,8 @@ static void UserAppSM_Idle(void)
   u8 au8ReceiveMsg[]="Follow the other";  
   u8 au8RightMsg[]="You are right!";
   u8 au8FailMsg[]="Game over!"; 
+  u8 au8successMsg1[]="We are";
+  u8 au8successMsg2[]="the best partner!";      
   static u8 u8flag=0;
   static u32 u32TimeCounter=0;
   static bool judge=FALSE;
@@ -178,10 +179,30 @@ static void UserAppSM_Idle(void)
   static u8 u8DataCounter=0;
   static u8 kcounter;
   static u8 au8LastAntData[8]={0};
-  static u8 au8CompareMsg[8]={0};
   static u8 Newdata=0;
-  if(u8flag==0)//receive data and compare
+  static bool u8WinMusic=TRUE;
+  static u8 au8CompareMsg[8]={0};
+  static u16 u16MusicCounter=0;
+  //the slave variable
+  static u8 au8TestMessage[8] = {0};
+  static u8 au8CurrentMessage[8]= {0};
+  static u8 u8Count=0;
+ 
+  static u16 u16delay=0;
+  static u16 u16Time=0;
+  static u8 u8button_en=0;
+ //the master varibale
+  
+  /*....................receive data and compare with each other...........*/
+  if(u8flag==0)
   {
+      u32TimeCounter++;
+      if(u32TimeCounter>2000)
+      {           
+         u32TimeCounter=0;         
+         LCDCommand(LCD_CLEAR_CMD);
+         LCDMessage(LINE1_START_ADDR+2,au8ReceiveMsg);             
+      }    
     if(WasButtonPressed(BUTTON0))
     {      
       ButtonAcknowledge(BUTTON0);     
@@ -206,9 +227,8 @@ static void UserAppSM_Idle(void)
       au8CompareMsg[buttoni]=4;
       buttoni++;
     }
-  if(u8DataCounter!=0)
-  {
-    
+   if(u8DataCounter!=0)
+   {   
     if(buttoni==u8DataCounter)
     {
           buttoni=0; 
@@ -227,48 +247,174 @@ static void UserAppSM_Idle(void)
         {  
            u8flag=1;
            LCDCommand(LCD_CLEAR_CMD);
-           LCDMessage(LINE1_START_ADDR+2,au8RightMsg); 
+           LCDMessage(LINE2_START_ADDR+2,au8RightMsg); 
      
         }   
          else if(judge==FALSE)
         {
           LCDCommand(LCD_CLEAR_CMD);
-          LCDMessage(LINE1_START_ADDR+4,au8FailMsg); 
-          AntCloseChannel();          
+          LCDMessage(LINE2_START_ADDR+4,au8FailMsg);         
+          u8flag=2;             
         }        
      } 
     u8DataCounter=0;
    }//end if u8DataCounter
-  }//end if u8flag 
+  }//end if u8flag =0  
+ 
   
-  else if(u8flag==1)//send data
+  /*..........................send data to the other board........................*/
+   if(u8flag==1)
   { 
-    u32TimeCounter++;
-    if(u32TimeCounter>2000)
-    {           
-       u32TimeCounter=0;         
-       LCDCommand(LCD_CLEAR_CMD);
-       LCDMessage(LINE1_START_ADDR,au8SendMsg);             
-   } 
+      u32TimeCounter++;
+      if(u32TimeCounter>2000)
+      {           
+         u32TimeCounter=0;         
+         LCDCommand(LCD_CLEAR_CMD);
+         LCDMessage(LINE1_START_ADDR,au8SendMsg);             
+      }
+      u16Time++;
+      if(u16delay>200)
+      {   
+         LedOff(WHITE);
+         LedOff(BLUE);
+         LedOff(YELLOW);
+         LedOff(RED);
+      }
+      else
+      {
+        u16delay++;
+      }  
+      if(WasButtonPressed(BUTTON0))
+      {
+        ButtonAcknowledge(BUTTON0);
+        LedOn(WHITE);
+        au8TestMessage[u8Count]=1;
+        u8Count++;
+        u16delay=0;
+        u16Time=0;
+        u8button_en=1;
+      }
+      if(WasButtonPressed(BUTTON1))
+      {
+        ButtonAcknowledge(BUTTON1);
+        LedOn(BLUE);
+        au8TestMessage[u8Count]=2;
+        u8Count++;
+        u16delay=0;
+        u16Time=0;
+        u8button_en=1;
+      }
+      if(WasButtonPressed(BUTTON2))
+      {
+        ButtonAcknowledge(BUTTON2);
+        LedOn(YELLOW);
+        au8TestMessage[u8Count]=3;
+        u8Count++;
+        u16delay=0;
+        u16Time=0;
+        u8button_en=1;
+      }
+      if(WasButtonPressed(BUTTON3))
+      {
+        ButtonAcknowledge(BUTTON3);
+        LedOn(RED);
+        au8TestMessage[u8Count]=4;
+        u8Count++;
+        u16delay=0;
+        u16Time=0;
+        u8button_en=1;
+      }  
+      if(u8Count==8)
+      {
+        u8Count=0;
+      }
+  }//end else if u8flag=1
+  
+  /*.................................press the error button........................................*/
+  if(u8flag==2)
+  {
+   AntCloseChannel();
   }
 
+/*...............................music sounds...........................................*/
+  if(u8flag==3)
+  {       
+      u32TimeCounter++;
+      if(u32TimeCounter>100)
+      {
+        u32TimeCounter=0;
+        LCDCommand(LCD_CLEAR_CMD);
+        LCDMessage(LINE1_START_ADDR+6,au8successMsg1);
+        LCDMessage(LINE2_START_ADDR+2,au8successMsg2); 
+      }
+      if(u8WinMusic)
+      { 
+         static u8 n=0;
+        char music1[100] = "51351353613613637247247777710";
+        u16MusicCounter++; 
   
-  
-  //show LED sequence
-  if(Newdata==1)
-  {    
-     led_display_button(au8LastAntData,&Newdata) ;        
+        if((u16MusicCounter-500)%200 == 0 && music1 != '\0')
+        {
+        
+            switch(music1[n])
+          {
+            case '1': PWMAudioOn(BUZZER1);
+                      PWMAudioSetFrequency(BUZZER1, 533);
+                      break;
+            case '2': PWMAudioOn(BUZZER1);
+                      PWMAudioSetFrequency(BUZZER1, 587);
+                      break;
+            case '3': PWMAudioOn(BUZZER1);
+                      PWMAudioSetFrequency(BUZZER1, 659);
+                      break;
+            case '4': PWMAudioOn(BUZZER1);
+                      PWMAudioSetFrequency(BUZZER1, 677);
+                      break;
+            case '5': PWMAudioOn(BUZZER1);
+                      PWMAudioSetFrequency(BUZZER1, 784);;
+                      break;
+            case '6': PWMAudioOn(BUZZER1);
+                      PWMAudioSetFrequency(BUZZER1, 880);
+                      break; 
+            case '7': PWMAudioOn(BUZZER1);
+                      PWMAudioSetFrequency(BUZZER1, 988);
+                      break; 
+            case '8': PWMAudioOn(BUZZER1);
+                      PWMAudioSetFrequency(BUZZER1, 392);
+                      break; 
+            case '0': PWMAudioOff(BUZZER1);
+                      break;                  
+          }
+          n++;       
+      }
+      
+     if(u16MusicCounter == 10000)
+     {
+       PWMAudioOff(BUZZER1);
+       u8WinMusic=FALSE;
+       u16MusicCounter=480;
+       n = 0;
+     }  
+    }
   }
-  //the counter of the DATA
+  
+  /*..........................show LED sequence................................*/
+  if(Newdata==1&& u8flag==0)
+  {    
+     led_display_button(au8LastAntData,&Newdata) ;
+     
+  }
+    
+  /*the counter of the DATA*/
   for(u8 m=0;m<8;m++)
   {
     if(au8LastAntData[m]!=0)
     {
       u8DataCounter++;
     } 
-  }  
-
-  //READ
+  }   
+  
+  /*..............READ the information of the message................. */
   if( AntReadData() )
   {
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
@@ -279,12 +425,29 @@ static void UserAppSM_Idle(void)
         {
           au8LastAntData[i] = G_au8AntApiCurrentData[i];
           Newdata=1;
+          if(au8LastAntData[0]==5)
+          {
+            u8flag=3;
+          }
         }
       }
 
     }//end if AND_DATA
     else if(G_eAntApiCurrentMessageClass == ANT_TICK)
-    {        
+    {
+      if((u16Time>2000)&&(u8button_en==1))
+       { 
+           u16Time =0;
+           u8button_en=0;
+           u8Count=0;
+           u8flag=0;
+           for(u8 u8count=0;u8count<8;u8count++)
+           {
+             au8CurrentMessage[u8count]=au8TestMessage[u8count];
+             au8TestMessage[u8count]=0;
+           }
+       }
+     AntQueueBroadcastMessage(au8CurrentMessage);      
     }     
   } //end if ANTREAD
 } /* end UserAppSM_Idle() */
@@ -293,16 +456,17 @@ static void UserAppSM_Idle(void)
 
 
 /*-------------------------------------------------------------------------------------------------------------------*/
-
+/*...............................show led sequence........................................*/
 static void  led_display_button(u8 *u8lastdata,u8 *u8new_data)
 {
   static u32 u32dataCount=0;
   static u8  datai=0;  
+
   if(u32dataCount==0)
   {   
     if(u8lastdata[datai]==0)
     {      
-        if( datai++>7)
+        if( datai++>6)
         {          
           datai=0;
           *u8new_data=0;
@@ -340,12 +504,13 @@ static void  led_display_button(u8 *u8lastdata,u8 *u8new_data)
           LedOff(BLUE);
           LedOff(YELLOW);
           LedOn(RED); 
-     }    
-  }//end if u32dataCount==200
+     }
+
+  }//end if u32dataCount==0
   if(u32dataCount++>200)
   {   
     u32dataCount=0;
-    if( datai++>8)
+    if( datai++>7)
     {         
         datai=0;
         *u8new_data=0;
@@ -359,19 +524,15 @@ static void  led_display_button(u8 *u8lastdata,u8 *u8new_data)
 }//end led_disply_button
 
 
-
 static void UserAppSM_Error(void)          
 {
   
-} /* end UserAppSM_Error() */
+} 
 
-
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* State to sit in if init failed */
 static void UserAppSM_FailedInit(void)          
 {
     
-} /* end UserAppSM_FailedInit() */
+} 
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
